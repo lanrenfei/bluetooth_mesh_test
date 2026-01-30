@@ -1,0 +1,19 @@
+name: Build Android APK
+
+on: [push] # 每次你改代码，它就自动帮你打包
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build apk --debug # 打包一个调试版 APK（无需证书签名）
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-debug.apk
