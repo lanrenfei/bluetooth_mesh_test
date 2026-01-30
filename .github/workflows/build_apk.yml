@@ -1,19 +1,28 @@
 name: Build Android APK
 
-on: [push] # 每次你改代码，它就自动帮你打包
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # 升级到 v4
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter pub get
-      - run: flutter build apk --debug # 打包一个调试版 APK（无需证书签名）
+          
+      # 自动创建 Android 骨架并覆盖配置
+      - run: flutter create . --overwrite --platforms=android
+      
+      # 重新安装插件确保环境一致
+      - run: flutter pub add nearby_connections permission_handler
+      
+      # 开始打包
+      - run: flutter build apk --debug
+      
+      # 关键修改：升级到 v4
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 
         with:
           name: app-release
           path: build/app/outputs/flutter-apk/app-debug.apk
