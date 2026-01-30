@@ -11,25 +11,24 @@ jobs:
         with:
           channel: 'stable'
 
-      # 1. 强制初始化 Android 环境
+      # 1. 彻底初始化项目结构
       - run: |
-          flutter create --platforms=android .
-          # 确保文件夹真的存在
-          ls -R android/app/
-
-      # 2. 找回你的大脑代码
+          rm -rf android  # 删掉旧的，防止冲突
+          flutter create --overwrite .
+      
+      # 2. 找回你的“大脑”代码
       - run: |
           BRAIN_FILE=$(grep -l "nearby_connections" -r . | grep ".dart" | head -n 1)
           cp "$BRAIN_FILE" lib/main.dart
 
-      # 3. 【全能搜索修改】不管 build.gradle 在哪，直接全盘修改版本号
+      # 3. 安装插件（这一步会自动修改部分配置文件）
+      - run: flutter pub add nearby_connections permission_handler
+
+      # 4. 暴力修正 SDK 版本（这是绕不过去的硬性要求）
       - run: |
           find android -name "build.gradle" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' {} +
           find android -name "build.gradle" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
           find android -name "build.gradle" -exec sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' {} +
-
-      # 4. 更新插件
-      - run: flutter pub add nearby_connections permission_handler
 
       # 5. 打包 APK
       - run: flutter build apk --debug
