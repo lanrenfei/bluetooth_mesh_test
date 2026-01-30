@@ -12,19 +12,16 @@ jobs:
         with:
           channel: 'stable'
           
-      # 第一步：先不管三七二十一，创建一个标准的 Android 空壳
+      # 1. 创建 Android 项目结构（它会生成一个默认的 lib/main.dart）
       - run: flutter create . --overwrite --platforms=android
       
-      # 第二步：【暴力还原】用仓库里你写的那段代码，强行覆盖掉刚生成的默认模板
-      - run: |
-          rm lib/main.dart
-          cp main_backup.dart lib/main.dart || cp lib/main.dart . # 这里做一个冗余保护
-          # 如果你的 main.dart 就在 lib 目录下，我们直接确保它在编译前没被改动
-          
-      # 第三步：安装插件
+      # 2. 【核心修复】用你的代码强行覆盖掉那个默认的“计数器”代码
+      - run: cp my_brain.dart lib/main.dart
+      
+      # 3. 安装必要的蓝牙和权限插件
       - run: flutter pub add nearby_connections permission_handler
       
-      # 第四步：打包
+      # 4. 编译 APK
       - run: flutter build apk --debug
       
       - name: Upload APK
