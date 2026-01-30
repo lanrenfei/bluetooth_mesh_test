@@ -7,23 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 1. 自动创建 Android 项目结构
+      # 1. 创建基础骨架
       - run: flutter create . --overwrite --platforms=android
 
-      # 2. 【智能修复】无论你的代码叫什么，只要内容是对的，我们就把它装上去
+      # 2. 智能找回你的“大脑”代码
       - run: |
-          # 寻找仓库里包含 "nearby_connections" 关键字的文件（那肯定就是你的大脑代码）
           BRAIN_FILE=$(grep -l "nearby_connections" -r . | grep ".dart" | head -n 1)
-          echo "找到了大脑文件: $BRAIN_FILE"
-          # 强行覆盖掉默认的模板
           cp "$BRAIN_FILE" lib/main.dart
-      
+
+      # 3. 【关键修复】自动提升 Android 编译版本 (蓝牙插件需要 API 33+)
+      - run: |
+          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
+          sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' android/app/build.gradle
+
+      # 4. 安装插件
       - run: flutter pub add nearby_connections permission_handler
+
+      # 5. 执行打包
       - run: flutter build apk --debug
       
       - name: Upload APK
