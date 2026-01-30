@@ -6,21 +6,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # 升级到 v4
+      - uses: actions/checkout@v4
+      
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           
-      # 自动创建 Android 骨架并覆盖配置
+      # 第一步：先不管三七二十一，创建一个标准的 Android 空壳
       - run: flutter create . --overwrite --platforms=android
       
-      # 重新安装插件确保环境一致
+      # 第二步：【暴力还原】用仓库里你写的那段代码，强行覆盖掉刚生成的默认模板
+      - run: |
+          rm lib/main.dart
+          cp main_backup.dart lib/main.dart || cp lib/main.dart . # 这里做一个冗余保护
+          # 如果你的 main.dart 就在 lib 目录下，我们直接确保它在编译前没被改动
+          
+      # 第三步：安装插件
       - run: flutter pub add nearby_connections permission_handler
       
-      # 开始打包
+      # 第四步：打包
       - run: flutter build apk --debug
       
-      # 关键修改：升级到 v4
       - name: Upload APK
         uses: actions/upload-artifact@v4 
         with:
