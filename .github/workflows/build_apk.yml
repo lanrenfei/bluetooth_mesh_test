@@ -17,7 +17,8 @@ jobs:
 
       - name: Fix Dependencies
         run: |
-          flutter pub add nearby_connections:5.1.0 permission_handler:11.3.1
+          flutter pub add nearby_connections
+          flutter pub add permission_handler
           flutter pub get
 
       - name: Set Android Configuration
