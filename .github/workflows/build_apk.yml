@@ -12,9 +12,7 @@ jobs:
       - name: Setup Project
         run: |
           flutter create --template=app --overwrite .
-          # 确保代码被正确替换
           rm lib/main.dart
-          # 这里假设你刚才创建的文件在 lib/main.dart
           
       - name: Install Plugins
         run: |
@@ -22,9 +20,7 @@ jobs:
           
       - name: Set Android Permissions
         run: |
-          # 自动注入蓝牙权限到 AndroidManifest.xml
           sed -i '/<application/i <uses-permission android:name="android.permission.BLUETOOTH" />\n<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />\n<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />\n<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />' android/app/src/main/AndroidManifest.xml
-          # 提升编译版本
           find android -name "build.gradle" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' {} +
           find android -name "build.gradle" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
 
