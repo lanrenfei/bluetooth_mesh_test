@@ -12,7 +12,7 @@ class MeshScreen extends StatefulWidget {
 
 class _MeshScreenState extends State<MeshScreen> {
   final Strategy strategy = Strategy.P2P_CLUSTER;
-  String status = "正在初始化...";
+  String status = "Initializing...";
   List<String> logs = [];
 
   @override
@@ -30,14 +30,10 @@ class _MeshScreenState extends State<MeshScreen> {
       Permission.location
     ].request();
 
-    void onPayloadRec(String id, Payload payload) {
-      _addLog("Data from $id");
-    }
-
     bool a = await Nearby().startAdvertising(
       "Node_${DateTime.now().second}",
       strategy,
-      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayloadReceived: onPayloadRec),
+      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {}),
       onConnectionResult: (id, s) => _addLog("Adv Result: $s"),
       onDisconnected: (id) => _addLog("Adv Disc: $id"),
     );
@@ -45,15 +41,7 @@ class _MeshScreenState extends State<MeshScreen> {
     bool d = await Nearby().startDiscovery(
       "Node_${DateTime.now().second}",
       strategy,
-      onEndpointFound: (id, n, s) {
-        Nearby().requestConnection(
-          "Node", 
-          id, 
-          onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayloadReceived: onPayloadRec),
-          onConnectionResult: (id, s) => _addLog("Disc Result: $s"),
-          onDisconnected: (id) => _addLog("Disc Disc: $id"),
-        );
-      },
+      onEndpointFound: (id, n, s) => Nearby().requestConnection("Node", id, onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {})),
       onEndpointLost: (id) => _addLog("Lost: $id"),
     );
 
