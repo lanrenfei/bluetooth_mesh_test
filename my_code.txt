@@ -32,7 +32,7 @@ class _MeshScreenState extends State<MeshScreen> {
       onConnectionInitiated: (id, info) async {
         await Nearby().acceptConnection(
           id, 
-          onPayloadReceived: (id, payload) => _addLog("Got data"),
+          onPayLoadReceived: (id, payload) => _addLog("Got data"),
           onPayloadTransferUpdate: (id, update) {},
         );
       },
@@ -50,7 +50,7 @@ class _MeshScreenState extends State<MeshScreen> {
           onConnectionInitiated: (id, info) async {
             await Nearby().acceptConnection(
               id, 
-              onPayloadReceived: (id, payload) => _addLog("Got data"),
+              onPayLoadReceived: (id, payload) => _addLog("Got data"),
               onPayloadTransferUpdate: (id, update) {},
             );
           },
