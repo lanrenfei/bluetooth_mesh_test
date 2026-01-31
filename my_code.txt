@@ -26,13 +26,15 @@ class _MeshScreenState extends State<MeshScreen> {
       Permission.location
     ].request();
 
-    bool a = await Nearby().startAdvertising(
+    dynamic nearby = Nearby();
+
+    bool a = await nearby.startAdvertising(
       "Node_${DateTime.now().second}",
       strategy,
       onConnectionInitiated: (id, info) async {
-        await Nearby().acceptConnection(
+        await nearby.acceptConnection(
           id, 
-          onPayLoadReceived: (id, payload) => _addLog("Got data"),
+          onPayloadReceived: (id, payload) => _addLog("Data"),
           onPayloadTransferUpdate: (id, update) {},
         );
       },
@@ -40,17 +42,17 @@ class _MeshScreenState extends State<MeshScreen> {
       onDisconnected: (id) => _addLog("Disc: $id"),
     );
 
-    bool d = await Nearby().startDiscovery(
+    bool d = await nearby.startDiscovery(
       "Node_${DateTime.now().second}",
       strategy,
       onEndpointFound: (id, n, s) {
-        Nearby().requestConnection(
+        nearby.requestConnection(
           "Node",
           id,
           onConnectionInitiated: (id, info) async {
-            await Nearby().acceptConnection(
+            await nearby.acceptConnection(
               id, 
-              onPayLoadReceived: (id, payload) => _addLog("Got data"),
+              onPayloadReceived: (id, payload) => _addLog("Data"),
               onPayloadTransferUpdate: (id, update) {},
             );
           },
@@ -76,7 +78,10 @@ class _MeshScreenState extends State<MeshScreen> {
       appBar: AppBar(title: const Text("Mesh Test")),
       body: Column(
         children: [
-          Text(status, style: const TextStyle(fontSize: 24)),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(status, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          ),
           Expanded(child: ListView(children: logs.map((l) => ListTile(title: Text(l))).toList())),
         ],
       ),
