@@ -12,14 +12,10 @@ class MeshScreen extends StatefulWidget {
 
 class _MeshScreenState extends State<MeshScreen> {
   final Strategy strategy = Strategy.P2P_CLUSTER;
-  String status = "Initializing...";
+  String status = "Ready";
   List<String> logs = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _initMesh();
-  }
+  void _addLog(String m) => setState(() => logs.insert(0, m));
 
   void _initMesh() async {
     await [
@@ -33,22 +29,46 @@ class _MeshScreenState extends State<MeshScreen> {
     bool a = await Nearby().startAdvertising(
       "Node_${DateTime.now().second}",
       strategy,
-      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {}),
-      onConnectionResult: (id, s) => _addLog("Adv Result: $s"),
-      onDisconnected: (id) => _addLog("Adv Disc: $id"),
+      onConnectionInitiated: (id, info) async {
+        await Nearby().acceptConnection(
+          id, 
+          onPayloadReceived: (id, payload) => _addLog("Got data"),
+          onPayloadTransferUpdate: (id, update) {},
+        );
+      },
+      onConnectionResult: (id, s) => _addLog("Adv: $s"),
+      onDisconnected: (id) => _addLog("Disc: $id"),
     );
 
     bool d = await Nearby().startDiscovery(
       "Node_${DateTime.now().second}",
       strategy,
-      onEndpointFound: (id, n, s) => Nearby().requestConnection("Node", id, onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {})),
+      onEndpointFound: (id, n, s) {
+        Nearby().requestConnection(
+          "Node",
+          id,
+          onConnectionInitiated: (id, info) async {
+            await Nearby().acceptConnection(
+              id, 
+              onPayloadReceived: (id, payload) => _addLog("Got data"),
+              onPayloadTransferUpdate: (id, update) {},
+            );
+          },
+          onConnectionResult: (id, s) => _addLog("Conn: $s"),
+          onDisconnected: (id) => _addLog("Disc: $id"),
+        );
+      },
       onEndpointLost: (id) => _addLog("Lost: $id"),
     );
 
-    setState(() => status = (a && d) ? "Mesh Active" : "Mesh Failed");
+    setState(() => status = (a && d) ? "Active" : "Error");
   }
 
-  void _addLog(String m) => setState(() => logs.insert(0, m));
+  @override
+  void initState() {
+    super.initState();
+    _initMesh();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +76,7 @@ class _MeshScreenState extends State<MeshScreen> {
       appBar: AppBar(title: const Text("Mesh Test")),
       body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.green.shade100,
-            child: Text(status, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
+          Text(status, style: const TextStyle(fontSize: 24)),
           Expanded(child: ListView(children: logs.map((l) => ListTile(title: Text(l))).toList())),
         ],
       ),
