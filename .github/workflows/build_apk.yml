@@ -11,27 +11,28 @@ jobs:
         with:
           channel: 'stable'
 
-      # 1. 彻底初始化项目结构
+      # 1. 初始化项目（最精简模式）
       - run: |
-          rm -rf android  # 删掉旧的，防止冲突
-          flutter create --overwrite .
-      
-      # 2. 找回你的“大脑”代码
+          flutter create --template=app --overwrite .
+          
+      # 2. 安装插件并确保依赖下载（这一步最耗时，也最容易出详细日志）
+      - run: |
+          flutter pub add nearby_connections permission_handler
+          flutter pub get
+
+      # 3. 找回你的“大脑”代码并覆盖
       - run: |
           BRAIN_FILE=$(grep -l "nearby_connections" -r . | grep ".dart" | head -n 1)
           cp "$BRAIN_FILE" lib/main.dart
 
-      # 3. 安装插件（这一步会自动修改部分配置文件）
-      - run: flutter pub add nearby_connections permission_handler
-
-      # 4. 暴力修正 SDK 版本（这是绕不过去的硬性要求）
+      # 4. 暴力升级 SDK 版本
       - run: |
           find android -name "build.gradle" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' {} +
           find android -name "build.gradle" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
           find android -name "build.gradle" -exec sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' {} +
 
-      # 5. 打包 APK
-      - run: flutter build apk --debug
+      # 5. 编译并开启详细日志模式 (这样报错了我们能看到为什么)
+      - run: flutter build apk --debug --verbose
       
       - name: Upload APK
         uses: actions/upload-artifact@v4 
