@@ -12,20 +12,25 @@ jobs:
       - name: Setup Project
         run: |
           flutter create --template=app --overwrite .
+          rm -f lib/main.dart
           cp my_code.txt lib/main.dart
-          
-      - name: Install Plugins
+
+      - name: Fix Dependencies
         run: |
-          flutter pub add nearby_connections permission_handler
-          
-      - name: Set Android Permissions
+          flutter pub add nearby_connections:5.1.0 permission_handler:11.3.1
+          flutter pub get
+
+      - name: Set Android Configuration
         run: |
           sed -i '/<application/i <uses-permission android:name="android.permission.BLUETOOTH" />\n<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />\n<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />\n<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />' android/app/src/main/AndroidManifest.xml
           find android -name "build.gradle" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' {} +
           find android -name "build.gradle" -exec sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' {} +
+          find android -name "build.gradle" -exec sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' {} +
 
       - name: Build APK
-        run: flutter build apk --debug
+        run: |
+          flutter clean
+          flutter build apk --debug
 
       - name: Upload
         uses: actions/upload-artifact@v4
