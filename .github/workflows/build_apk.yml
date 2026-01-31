@@ -12,7 +12,7 @@ jobs:
       - name: Setup Project
         run: |
           flutter create --template=app --overwrite .
-          rm lib/main.dart
+          cp my_code.txt lib/main.dart
           
       - name: Install Plugins
         run: |
