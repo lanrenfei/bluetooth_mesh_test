@@ -15,61 +15,74 @@ class _MeshScreenState extends State<MeshScreen> {
   String status = "Ready";
   List<String> logs = [];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initMesh());
+  }
+
   void _addLog(String m) => setState(() => logs.insert(0, m));
 
-  void _initMesh() async {
-    await [
+  Future<void> _initMesh() async {
+    setState(() => status = "Requesting Permissions...");
+    
+    Map<Permission, PermissionStatus> statuses = await [
       Permission.bluetooth,
       Permission.bluetoothAdvertise,
       Permission.bluetoothConnect,
       Permission.bluetoothScan,
-      Permission.location
+      Permission.location,
     ].request();
 
+    if (statuses.values.any((element) => element.isDenied)) {
+      setState(() => status = "Permission Denied");
+      return;
+    }
+
+    setState(() => status = "Starting Mesh...");
     dynamic nearby = Nearby();
 
-    bool a = await nearby.startAdvertising(
-      "Node_${DateTime.now().second}",
-      strategy,
-      onConnectionInitiated: (id, info) async {
-        await nearby.acceptConnection(
-          id, 
-          onPayloadReceived: (id, payload) => _addLog("Data"),
-          onPayloadTransferUpdate: (id, update) {},
-        );
-      },
-      onConnectionResult: (id, s) => _addLog("Adv: $s"),
-      onDisconnected: (id) => _addLog("Disc: $id"),
-    );
+    try {
+      bool a = await nearby.startAdvertising(
+        "Node_${DateTime.now().millisecond}",
+        strategy,
+        onConnectionInitiated: (id, info) async {
+          await nearby.acceptConnection(
+            id, 
+            onPayloadReceived: (id, payload) => _addLog("Data"),
+            onPayloadTransferUpdate: (id, update) {},
+          );
+        },
+        onConnectionResult: (id, s) => _addLog("Adv: $s"),
+        onDisconnected: (id) => _addLog("Disc: $id"),
+      );
 
-    bool d = await nearby.startDiscovery(
-      "Node_${DateTime.now().second}",
-      strategy,
-      onEndpointFound: (id, n, s) {
-        nearby.requestConnection(
-          "Node",
-          id,
-          onConnectionInitiated: (id, info) async {
-            await nearby.acceptConnection(
-              id, 
-              onPayloadReceived: (id, payload) => _addLog("Data"),
-              onPayloadTransferUpdate: (id, update) {},
-            );
-          },
-          onConnectionResult: (id, s) => _addLog("Conn: $s"),
-          onDisconnected: (id) => _addLog("Disc: $id"),
-        );
-      },
-      onEndpointLost: (id) => _addLog("Lost: $id"),
-    );
+      bool d = await nearby.startDiscovery(
+        "Node_${DateTime.now().millisecond}",
+        strategy,
+        onEndpointFound: (id, n, s) {
+          nearby.requestConnection(
+            "Node",
+            id,
+            onConnectionInitiated: (id, info) async {
+              await nearby.acceptConnection(
+                id, 
+                onPayloadReceived: (id, payload) => _addLog("Data"),
+                onPayloadTransferUpdate: (id, update) {},
+              );
+            },
+            onConnectionResult: (id, s) => _addLog("Conn: $s"),
+            onDisconnected: (id) => _addLog("Disc: $id"),
+          );
+        },
+        onEndpointLost: (id) => _addLog("Lost: $id"),
+      );
 
-    setState(() => status = (a && d) ? "Active" : "Error");
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _initMesh();
+      setState(() => status = (a && d) ? "Active" : "Mesh Error");
+    } catch (e) {
+      setState(() => status = "Fatal Error");
+      _addLog(e.toString());
+    }
   }
 
   @override
@@ -82,6 +95,7 @@ class _MeshScreenState extends State<MeshScreen> {
             padding: const EdgeInsets.all(20),
             child: Text(status, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           ),
+          ElevatedButton(onPressed: _initMesh, child: const Text("Retry Init")),
           Expanded(child: ListView(children: logs.map((l) => ListTile(title: Text(l))).toList())),
         ],
       ),
