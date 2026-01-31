@@ -30,22 +30,31 @@ class _MeshScreenState extends State<MeshScreen> {
       Permission.location
     ].request();
 
+    // 修正点 1: onPayloadReceived 的 'l' 改为小写
     bool a = await Nearby().startAdvertising(
       "Node_${DateTime.now().second}",
       strategy,
-      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {}),
-      onConnectionResult: (id, s) => _addLog("连接结果: $s"),
-      onDisconnected: (id) => _addLog("断开连接: $id"),
+      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayloadReceived: (id, p) {}),
+      onConnectionResult: (id, s) => _addLog("广播连接: $s"),
+      onDisconnected: (id) => _addLog("断开: $id"),
     );
 
+    // 修正点 2: 添加了强制要求的 onConnectionResult 参数
     bool d = await Nearby().startDiscovery(
       "Node_${DateTime.now().second}",
       strategy,
-      onEndpointFound: (id, n, s) => Nearby().requestConnection("Node", id, onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {})),
-      onEndpointLost: (id) => _addLog("丢失邻居"),
+      onEndpointFound: (id, n, s) {
+        Nearby().requestConnection(
+          "Node", 
+          id, 
+          onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayloadReceived: (id, p) {}),
+          onConnectionResult: (id, s) => _addLog("发现连接: $s"),
+        );
+      },
+      onEndpointLost: (id) => _addLog("邻居离开"),
     );
 
-    setState(() => status = (a && d) ? "自组网已激活" : "蓝牙初始化失败");
+    setState(() => status = (a && d) ? "自组网已激活" : "启动失败");
   }
 
   void _addLog(String m) => setState(() => logs.insert(0, m));
@@ -53,13 +62,13 @@ class _MeshScreenState extends State<MeshScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("蓝牙自组网测试")),
+      appBar: AppBar(title: const Text("Mesh Test")),
       body: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
-            child: Row(children: [const Icon(Icons.hub), const SizedBox(width: 10), Text(status)]),
+            color: Colors.green.shade50,
+            child: Text(status, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           Expanded(child: ListView(children: logs.map((l) => ListTile(title: Text(l))).toList())),
         ],
