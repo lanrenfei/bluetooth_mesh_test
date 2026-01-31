@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+import 'package:nearby_connections/nearby_connections.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+void main() => runApp(const MaterialApp(home: MeshScreen()));
+
+class MeshScreen extends StatefulWidget {
+  const MeshScreen({super.key});
+  @override
+  State<MeshScreen> createState() => _MeshScreenState();
+}
+
+class _MeshScreenState extends State<MeshScreen> {
+  final Strategy strategy = Strategy.P2P_CLUSTER;
+  String status = "正在初始化...";
+  List<String> logs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initMesh();
+  }
+
+  void _initMesh() async {
+    await [
+      Permission.bluetooth,
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.bluetoothScan,
+      Permission.location
+    ].request();
+
+    bool a = await Nearby().startAdvertising(
+      "Node_${DateTime.now().second}",
+      strategy,
+      onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {}),
+      onConnectionResult: (id, s) => _addLog("连接结果: $s"),
+      onDisconnected: (id) => _addLog("断开连接: $id"),
+    );
+
+    bool d = await Nearby().startDiscovery(
+      "Node_${DateTime.now().second}",
+      strategy,
+      onEndpointFound: (id, n, s) => Nearby().requestConnection("Node", id, onConnectionInitiated: (id, info) => Nearby().acceptConnection(id, onPayLoadReceived: (id, p) {})),
+      onEndpointLost: (id) => _addLog("丢失邻居"),
+    );
+
+    setState(() => status = (a && d) ? "自组网已激活" : "蓝牙初始化失败");
+  }
+
+  void _addLog(String m) => setState(() => logs.insert(0, m));
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("蓝牙自组网测试")),
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.blue.shade50,
+            child: Row(children: [const Icon(Icons.hub), const SizedBox(width: 10), Text(status)]),
+          ),
+          Expanded(child: ListView(children: logs.map((l) => ListTile(title: Text(l))).toList())),
+        ],
+      ),
+    );
+  }
+}
